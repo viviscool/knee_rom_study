@@ -1,0 +1,1209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#0d1117">
+<title>MVP Knee ROM Measure</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:#0d1117; --surface:#161b22; --surface2:#1e2530; --border:#30363d;
+  --accent:#4fc3f7; --accent2:#81c784; --accent3:#ffb74d; --warn:#ef5350;
+  --text:#e6edf3; --muted:#8b949e; --radius:16px;
+  --safe-top:env(safe-area-inset-top,0px);
+  --safe-bot:env(safe-area-inset-bottom,0px);
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+html,body{height:100%;}
+body{
+  font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);
+  min-height:100vh;min-height:100dvh;overflow-x:hidden;
+  -webkit-font-smoothing:antialiased;
+}
+button{font-family:inherit;}
+
+.screen{display:none;min-height:100vh;min-height:100dvh;}
+.screen.active{display:flex;}
+
+/* ═══ WELCOME ═══ */
+#screen-welcome{
+  flex-direction:column;align-items:center;justify-content:flex-start;
+  padding:calc(40px + var(--safe-top)) 22px calc(40px + var(--safe-bot));
+  background:radial-gradient(ellipse 80% 60% at 50% 0%,#0a2540 0%,var(--bg) 70%);
+  gap:14px;
+}
+.logo-badge{display:flex;align-items:center;gap:11px;margin-bottom:24px;margin-top:12px;}
+.logo-icon{
+  width:48px;height:48px;background:linear-gradient(135deg,var(--accent),#0288d1);
+  border-radius:13px;display:flex;align-items:center;justify-content:center;font-size:24px;
+  box-shadow:0 8px 28px rgba(79,195,247,0.3);
+}
+.logo-text{font-family:'DM Serif Display',serif;font-size:22px;}
+.logo-text span{color:var(--accent);}
+
+.welcome-title{
+  font-family:'DM Serif Display',serif;
+  font-size:clamp(26px,7vw,42px);text-align:center;line-height:1.15;margin-bottom:10px;
+}
+.welcome-title em{color:var(--accent);font-style:italic;}
+.welcome-sub{
+  color:var(--muted);text-align:center;font-size:15px;
+  max-width:440px;line-height:1.55;margin-bottom:22px;
+}
+
+.section-label{
+  font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;
+  color:var(--muted);margin-bottom:10px;text-align:center;width:100%;max-width:440px;
+}
+.side-selector{display:flex;gap:10px;width:100%;max-width:440px;margin-bottom:6px;}
+.side-btn{
+  flex:1;padding:14px 14px;border-radius:12px;cursor:pointer;
+  font-size:14px;font-weight:600;
+  border:2px solid var(--border);background:var(--surface);color:var(--muted);
+  transition:all 0.2s;text-align:center;
+}
+.side-btn:active{transform:scale(0.97);}
+.side-btn.selected-left{border-color:#4fc3f7;background:rgba(79,195,247,0.1);color:#4fc3f7;}
+.side-btn.selected-right{border-color:#ffb74d;background:rgba(255,183,77,0.1);color:#ffb74d;}
+
+.btn-primary{
+  background:linear-gradient(135deg,var(--accent),#0288d1);color:#000;border:none;
+  padding:15px 38px;font-size:16px;font-weight:600;border-radius:100px;cursor:pointer;
+  transition:all 0.2s;box-shadow:0 4px 20px rgba(79,195,247,0.3);
+  margin-top:14px;width:100%;max-width:440px;
+}
+.btn-primary:active{transform:scale(0.98);}
+.btn-primary:disabled{opacity:0.4;cursor:not-allowed;background:var(--surface2);color:var(--muted);box-shadow:none;}
+.btn-secondary{
+  background:var(--surface2);color:var(--text);border:1px solid var(--border);
+  padding:10px 20px;font-size:13px;font-weight:500;border-radius:100px;cursor:pointer;transition:all 0.2s;
+}
+.btn-secondary:active{transform:scale(0.97);}
+
+.info-card{
+  width:100%;max-width:440px;
+  background:rgba(79,195,247,0.06);
+  border:1px solid rgba(79,195,247,0.2);
+  border-radius:12px;padding:14px 16px;
+  font-size:13px;color:var(--text);line-height:1.55;
+}
+.info-card strong{color:var(--accent);}
+.disclaimer{
+  margin-top:4px;font-size:11px;color:var(--muted);text-align:center;
+  max-width:440px;line-height:1.5;
+}
+
+/* ═══ SETUP ═══ */
+#screen-setup{
+  flex-direction:column;align-items:center;
+  padding:calc(20px + var(--safe-top)) 18px calc(20px + var(--safe-bot));gap:14px;
+}
+.setup-header{
+  display:flex;align-items:center;justify-content:space-between;
+  width:100%;max-width:540px;margin-bottom:4px;
+}
+.setup-title{font-family:'DM Serif Display',serif;font-size:20px;line-height:1.2;text-align:center;flex:1;}
+.video-wrap{
+  width:100%;max-width:540px;aspect-ratio:4/3;border-radius:var(--radius);
+  border:2px solid var(--border);overflow:hidden;position:relative;background:#000;
+}
+.video-wrap video,.video-wrap canvas{
+  position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;
+}
+.status-pill{
+  display:inline-flex;align-items:center;gap:8px;padding:8px 16px;border-radius:100px;
+  font-size:13px;font-weight:500;background:var(--surface2);border:1px solid var(--border);
+}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--muted);transition:background 0.3s;}
+.dot.ready{background:var(--accent2);box-shadow:0 0 8px var(--accent2);}
+.dot.detecting{background:var(--accent3);animation:pulse 1s infinite;}
+.dot.error{background:var(--warn);}
+@keyframes pulse{0%,100%{opacity:1;}50%{opacity:0.3;}}
+
+.position-card{
+  width:100%;max-width:540px;
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--radius);padding:14px 16px;
+}
+.position-card-title{
+  font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;
+  color:var(--accent);margin-bottom:10px;display:flex;align-items:center;gap:6px;
+}
+.position-steps{display:flex;flex-direction:column;gap:7px;}
+.position-step{
+  display:flex;align-items:flex-start;gap:10px;
+  background:var(--surface2);border-radius:9px;padding:9px 11px;
+}
+.position-step-icon{font-size:17px;flex-shrink:0;margin-top:1px;}
+.position-step-text{font-size:12px;color:var(--muted);line-height:1.45;}
+.position-step-text strong{color:var(--text);display:block;margin-bottom:2px;font-size:12.5px;}
+.camera-switch{
+  display:flex;align-items:center;gap:8px;font-size:13px;color:var(--muted);
+  background:var(--surface);border:1px solid var(--border);border-radius:100px;
+  padding:8px 14px;cursor:pointer;
+}
+.camera-switch:active{background:var(--surface2);}
+
+/* ═══ MEASURE SCREEN ═══ */
+#screen-measure{
+  flex-direction:column;height:100vh;height:100dvh;overflow:hidden;
+}
+.meas-header{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:calc(10px + var(--safe-top)) 14px 10px;
+  border-bottom:1px solid var(--border);background:var(--surface);flex-shrink:0;gap:10px;
+}
+.meas-header-name{font-family:'DM Serif Display',serif;font-size:16px;}
+.meas-header-side{
+  font-size:11px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;
+  padding:2px 9px;border-radius:100px;
+}
+.meas-side-left{background:rgba(79,195,247,0.15);color:#4fc3f7;}
+.meas-side-right{background:rgba(255,183,77,0.15);color:#ffb74d;}
+
+.meas-body{
+  display:flex;flex-direction:column;flex:1;overflow:hidden;
+}
+.camera-panel{
+  position:relative;background:#000;overflow:hidden;
+  flex:1;min-height:0;
+}
+.camera-panel video{
+  width:100%;height:100%;object-fit:contain;
+}
+.camera-panel canvas{
+  position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;
+}
+.mirror video,.mirror canvas{transform:scaleX(-1);}
+
+/* Overlay angle bubble — big, glanceable */
+.angle-overlay{
+  position:absolute;top:14px;left:14px;
+  background:rgba(13,17,23,0.85);
+  -webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);
+  border:1px solid var(--border);border-radius:14px;
+  padding:10px 14px;z-index:5;min-width:118px;
+}
+.angle-overlay-label{
+  font-size:10px;color:var(--muted);text-transform:uppercase;
+  letter-spacing:.08em;margin-bottom:2px;
+}
+.angle-overlay-value{
+  font-family:'DM Serif Display',serif;font-size:38px;line-height:1;color:var(--accent);
+  transition:color .2s;font-weight:400;
+}
+.angle-overlay-value.good{color:var(--accent2);}
+.angle-overlay-value.unit{font-size:18px;color:var(--muted);font-family:'DM Sans',sans-serif;}
+.angle-overlay-sub{font-size:11px;color:var(--muted);margin-top:3px;}
+
+/* Quality indicator */
+.quality-pill{
+  position:absolute;top:14px;right:14px;
+  display:flex;align-items:center;gap:6px;
+  background:rgba(13,17,23,0.85);
+  -webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);
+  border:1px solid var(--border);border-radius:100px;
+  padding:6px 11px;font-size:11px;font-weight:600;z-index:5;
+}
+.quality-dot{width:7px;height:7px;border-radius:50%;}
+.quality-good{color:var(--accent2);}
+.quality-good .quality-dot{background:var(--accent2);box-shadow:0 0 6px var(--accent2);}
+.quality-poor{color:var(--warn);}
+.quality-poor .quality-dot{background:var(--warn);}
+.quality-fair{color:var(--accent3);}
+.quality-fair .quality-dot{background:var(--accent3);}
+
+/* Bottom control bar */
+.control-bar{
+  background:var(--surface);border-top:1px solid var(--border);
+  padding:12px 14px calc(12px + var(--safe-bot));
+  display:flex;flex-direction:column;gap:10px;flex-shrink:0;
+}
+.captures{display:flex;gap:10px;}
+.capture-card{
+  flex:1;background:var(--surface2);border:1px solid var(--border);
+  border-radius:12px;padding:9px 11px;text-align:center;position:relative;
+}
+.capture-card-label{
+  font-size:10px;color:var(--muted);text-transform:uppercase;
+  letter-spacing:.08em;margin-bottom:2px;
+}
+.capture-card-value{
+  font-family:'DM Serif Display',serif;font-size:24px;color:var(--text);line-height:1;
+}
+.capture-card-value .unit{font-size:12px;color:var(--muted);font-family:'DM Sans';}
+.capture-card.captured{border-color:var(--accent2);background:rgba(129,199,132,0.08);}
+.capture-card.captured .capture-card-value{color:var(--accent2);}
+.capture-card-sub{font-size:10px;color:var(--muted);margin-top:2px;}
+
+.control-buttons{display:flex;gap:8px;}
+.btn-action{
+  flex:1;padding:13px 8px;border-radius:12px;cursor:pointer;
+  font-size:13px;font-weight:600;border:none;transition:all 0.15s;
+  display:flex;align-items:center;justify-content:center;gap:6px;
+}
+.btn-action:active{transform:scale(0.97);}
+.btn-capture-ext{
+  background:rgba(79,195,247,0.15);color:var(--accent);
+  border:1px solid rgba(79,195,247,0.3);
+}
+.btn-capture-flex{
+  background:rgba(129,199,132,0.15);color:var(--accent2);
+  border:1px solid rgba(129,199,132,0.3);
+}
+.btn-action:disabled{opacity:0.4;cursor:not-allowed;}
+.btn-reset{
+  background:var(--surface2);color:var(--muted);
+  border:1px solid var(--border);padding:13px 16px;
+}
+.btn-finish{
+  background:linear-gradient(135deg,var(--accent),#0288d1);color:#000;
+  flex:1.4;
+}
+
+.flash{
+  position:absolute;top:0;left:0;right:0;bottom:0;
+  background:rgba(255,255,255,0.5);pointer-events:none;z-index:8;
+  opacity:0;transition:opacity 0.4s;
+}
+.flash.show{opacity:1;transition:opacity 0.05s;}
+
+.toast{
+  position:absolute;left:50%;bottom:50%;transform:translate(-50%,50%);
+  background:rgba(13,17,23,0.92);
+  -webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);
+  border:1px solid var(--accent2);border-radius:14px;padding:18px 24px;
+  font-size:16px;font-weight:600;color:var(--accent2);z-index:9;
+  opacity:0;transition:opacity 0.25s,transform 0.25s;text-align:center;
+  pointer-events:none;
+}
+.toast.show{opacity:1;transform:translate(-50%,calc(50% - 20px));}
+.toast-sub{font-size:12px;color:var(--muted);margin-top:4px;font-weight:400;}
+
+/* Hint banner over the camera */
+.hint-banner{
+  position:absolute;left:14px;right:14px;bottom:14px;
+  background:rgba(13,17,23,0.85);
+  -webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);
+  border:1px solid var(--border);border-radius:12px;
+  padding:9px 13px;font-size:12px;color:var(--text);line-height:1.4;z-index:5;
+}
+.hint-banner.warn{border-color:rgba(239,83,80,0.5);color:var(--warn);}
+
+/* ═══ RESULTS ═══ */
+#screen-results{
+  flex-direction:column;align-items:center;
+  padding:calc(28px + var(--safe-top)) 20px calc(28px + var(--safe-bot));
+  gap:18px;overflow-y:auto;
+}
+.results-hdr{text-align:center;}
+.results-title{font-family:'DM Serif Display',serif;font-size:30px;margin-bottom:4px;}
+.results-sub{color:var(--muted);font-size:13px;}
+.rom-summary{
+  width:100%;max-width:440px;
+  background:linear-gradient(135deg,rgba(79,195,247,0.08),rgba(129,199,132,0.05));
+  border:1px solid var(--border);border-radius:var(--radius);
+  padding:22px 20px;text-align:center;
+}
+.rom-big-number{
+  font-family:'DM Serif Display',serif;font-size:62px;line-height:1;color:var(--accent);
+  margin:8px 0;
+}
+.rom-big-number .unit{font-size:24px;color:var(--muted);font-family:'DM Sans',sans-serif;}
+.rom-label{font-size:13px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;}
+.rom-detail{
+  display:flex;justify-content:space-around;margin-top:16px;
+  padding-top:16px;border-top:1px solid var(--border);
+}
+.rom-detail-item{text-align:center;}
+.rom-detail-label{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;}
+.rom-detail-value{font-family:'DM Serif Display',serif;font-size:24px;margin-top:3px;}
+.rom-detail-value.ext{color:var(--accent);}
+.rom-detail-value.flex{color:var(--accent2);}
+
+.norms-card{
+  width:100%;max-width:440px;background:var(--surface);
+  border:1px solid var(--border);border-radius:var(--radius);padding:16px 18px;
+}
+.norms-title{
+  font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;
+  color:var(--accent);margin-bottom:10px;
+}
+.norm-row{display:flex;justify-content:space-between;padding:6px 0;font-size:13px;}
+.norm-row + .norm-row{border-top:1px solid var(--border);}
+.norm-label{color:var(--muted);}
+.norm-val{font-weight:600;}
+
+.results-actions{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;width:100%;max-width:440px;}
+.results-actions .btn-primary{margin-top:0;flex:1;}
+.results-actions .btn-secondary{flex:1;}
+</style>
+</head>
+<body>
+
+<!-- ═══════════ WELCOME ═══════════ -->
+<div id="screen-welcome" class="screen active">
+  <div class="logo-badge">
+    <div class="logo-icon">🦵</div>
+    <div class="logo-text">MVP <span>Knee ROM Measure</span></div>
+  </div>
+  <h1 class="welcome-title">Measure knee<br><em>range of motion</em></h1>
+  <p class="welcome-sub">Patient supine. Camera side-on. AI pose tracking measures knee flexion and hyperextension in the sagittal plane — equivalent to a clinical goniometer.</p>
+
+  <div style="width:100%;max-width:440px;">
+    <div class="section-label">Which knee?</div>
+    <div class="side-selector">
+      <div class="side-btn" id="btn-left" onclick="selectSide('left')">🦵 Left Knee</div>
+      <div class="side-btn" id="btn-right" onclick="selectSide('right')">Right Knee 🦵</div>
+    </div>
+  </div>
+
+  <div class="info-card" style="margin-top:14px;">
+    <strong>How it works.</strong> Patient lies supine. The camera identifies hip, knee, and ankle landmarks — equivalent to a goniometer placed on the greater trochanter, lateral femoral epicondyle, and lateral malleolus. <strong>0° = full extension</strong> (leg flat on bed). Positive values are flexion; negative values are hyperextension.
+  </div>
+
+  <button class="btn-primary" id="btn-start" onclick="goSetup()" disabled>Select a knee to begin</button>
+  <p class="disclaimer">For clinical use, validate against a manual goniometer. Camera-based ROM has typical ±3–5° agreement with goniometry under good conditions.</p>
+</div>
+
+<!-- ═══════════ SETUP ═══════════ -->
+<div id="screen-setup" class="screen">
+  <div class="setup-header">
+    <button class="btn-secondary" onclick="goWelcome()">← Back</button>
+    <h2 class="setup-title" id="setup-title">Position the camera</h2>
+    <button class="btn-secondary" id="cam-switch-btn" onclick="switchCamera()" style="padding:8px 14px">🔄</button>
+  </div>
+  <div class="video-wrap" id="setup-video-wrap">
+    <video id="setup-video" autoplay playsinline muted></video>
+    <canvas id="setup-canvas"></canvas>
+  </div>
+  <div class="status-pill"><div class="dot detecting" id="setup-dot"></div><span id="setup-status">Initialising…</span></div>
+
+  <div class="position-card" id="position-card"></div>
+
+  <button class="btn-primary" id="btn-begin" onclick="goMeasure()" disabled>Begin Measurement</button>
+</div>
+
+<!-- ═══════════ MEASURE ═══════════ -->
+<div id="screen-measure" class="screen">
+  <div class="meas-header">
+    <button class="btn-secondary" style="padding:6px 12px;font-size:12px" onclick="goWelcome()">✕ Exit</button>
+    <div style="display:flex;align-items:center;gap:8px;">
+      <span class="meas-header-name">Knee ROM</span>
+      <span class="meas-header-side" id="meas-side-badge">LEFT</span>
+    </div>
+    <button class="btn-secondary" style="padding:6px 12px;font-size:12px" onclick="switchCamera()">🔄</button>
+  </div>
+  <div class="meas-body">
+    <div class="camera-panel" id="camera-panel">
+      <video id="meas-video" autoplay playsinline muted></video>
+      <canvas id="meas-canvas"></canvas>
+
+      <div class="angle-overlay">
+        <div class="angle-overlay-label" id="angle-overlay-label">Knee Angle</div>
+        <div class="angle-overlay-value" id="live-angle">--<span class="unit">°</span></div>
+        <div class="angle-overlay-sub" id="raw-angle">Hold still to capture</div>
+      </div>
+
+      <div class="quality-pill quality-fair" id="quality-pill">
+        <div class="quality-dot"></div>
+        <span id="quality-text">Detecting…</span>
+      </div>
+
+      <div class="hint-banner" id="hint-banner">Position patient supine with the operative knee facing the camera.</div>
+      <div class="flash" id="flash"></div>
+      <div class="toast" id="toast"><div id="toast-text">Captured</div><div class="toast-sub" id="toast-sub"></div></div>
+    </div>
+
+    <div class="control-bar">
+      <div class="captures">
+        <div class="capture-card" id="cap-ext">
+          <div class="capture-card-label">Extension</div>
+          <div class="capture-card-value" id="cap-ext-val">—<span class="unit">°</span></div>
+          <div class="capture-card-sub" id="cap-ext-sub">Not captured</div>
+        </div>
+        <div class="capture-card" id="cap-flex">
+          <div class="capture-card-label">Flexion</div>
+          <div class="capture-card-value" id="cap-flex-val">—<span class="unit">°</span></div>
+          <div class="capture-card-sub" id="cap-flex-sub">Not captured</div>
+        </div>
+      </div>
+      <div class="control-buttons">
+        <button class="btn-action btn-capture-ext" id="btn-cap-ext" onclick="captureExt()">📏 Capture Extension</button>
+        <button class="btn-action btn-capture-flex" id="btn-cap-flex" onclick="captureFlex()">📏 Capture Flexion</button>
+      </div>
+      <div class="control-buttons">
+        <button class="btn-action btn-reset" onclick="resetCaptures()">↺ Reset</button>
+        <button class="btn-action btn-finish" onclick="finishSession()">View Results →</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════ RESULTS ═══════════ -->
+<div id="screen-results" class="screen">
+  <div class="results-hdr">
+    <div style="font-size:40px;margin-bottom:8px">📐</div>
+    <h2 class="results-title">Measurement Complete</h2>
+    <p class="results-sub" id="res-sub">Knee — </p>
+  </div>
+
+  <div class="rom-summary">
+    <div class="rom-label">Total Arc of Motion</div>
+    <div class="rom-big-number" id="res-arc">—<span class="unit">°</span></div>
+    <div class="rom-detail">
+      <div class="rom-detail-item">
+        <div class="rom-detail-label">Extension</div>
+        <div class="rom-detail-value ext" id="res-ext">—°</div>
+      </div>
+      <div class="rom-detail-item">
+        <div class="rom-detail-label">Flexion</div>
+        <div class="rom-detail-value flex" id="res-flex">—°</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="norms-card">
+    <div class="norms-title">📚 Reference Norms (AAOS)</div>
+    <div class="norm-row"><span class="norm-label">Normal extension</span><span class="norm-val">0° (some hyperext. to −5°)</span></div>
+    <div class="norm-row"><span class="norm-label">Normal active flexion</span><span class="norm-val">135–140°</span></div>
+    <div class="norm-row"><span class="norm-label">Functional walking</span><span class="norm-val">~67° flexion</span></div>
+    <div class="norm-row"><span class="norm-label">Stair climbing</span><span class="norm-val">~90–100° flexion</span></div>
+    <div class="norm-row"><span class="norm-label">Sit-to-stand</span><span class="norm-val">~93° flexion</span></div>
+    <div class="norm-row"><span class="norm-label">Post-TKA functional minimum</span><span class="norm-val">≥110° flexion, full ext.</span></div>
+  </div>
+
+  <div class="results-actions">
+    <button class="btn-secondary" onclick="goMeasure()">↺ Measure Again</button>
+    <button class="btn-primary" onclick="goWelcome()" style="margin-top:0">🏠 New Session</button>
+  </div>
+</div>
+
+<script type="module">
+import { PoseLandmarker, FilesetResolver, DrawingUtils }
+  from "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/vision_bundle.mjs";
+
+/* ═══════════════════════════════════════════════════════════════════
+   STATE
+   ═══════════════════════════════════════════════════════════════════ */
+let operativeSide = null;        // 'left' | 'right'
+let cameraFacing = 'environment'; // 'user' | 'environment' — rear preferred for assistant-held filming
+let poseLandmarker = null;
+let stream = null;
+let rafId = null;
+let lastTime = -1;
+
+// Measurement state
+let smoothedFlexion = null;     // EMA-smoothed flexion angle, deg
+let lastFlexion = null;          // previous frame's smoothed value (for jump-rejection)
+let currentFlexion = null;       // latest valid frame
+let currentQuality = 'poor';     // 'good' | 'fair' | 'poor'
+let capturedExt = null;          // captured extension (in flexion degrees; 0 = full ext)
+let capturedFlex = null;         // captured flexion (in flexion degrees)
+
+const EMA_ALPHA = 0.35;          // smoothing factor — lower = smoother but laggier
+const MAX_FRAME_JUMP = 25;       // deg — frames exceeding this are treated as outliers
+const MIN_VISIBILITY = 0.55;     // each of hip/knee/ankle must be at least this visible
+
+// Landmark indices (MediaPipe Pose Landmarker)
+// MediaPipe's anatomical-side labels assume a MIRRORED (selfie-camera)
+// input — see the MediaPipe Hands docs which note: "handedness is
+// determined assuming the input image is mirrored... If it is not the
+// case, please swap the handedness output in the application." The same
+// applies to Pose Landmarker.
+//
+//   Selfie input (front camera, naturally mirrored by the device):
+//     index 23/25/27 = patient's anatomical LEFT  hip/knee/ankle  ✓
+//     index 24/26/28 = patient's anatomical RIGHT hip/knee/ankle  ✓
+//
+//   Unmirrored input (rear camera):
+//     index 23/25/27 actually correspond to the patient's anatomical
+//     RIGHT side, and 24/26/28 to the anatomical LEFT — they are
+//     SWAPPED relative to the selfie convention.
+//
+// We resolve the selected anatomical side to the correct landmark
+// indices based on which camera is in use.
+function getLmkIdx(side) {
+  // 'user' = front (selfie) camera = mirrored input, MediaPipe labels match anatomy directly.
+  // 'environment' = rear camera = unmirrored input, swap labels.
+  const isSelfie = cameraFacing === 'user';
+  const wantLeftIndices  = isSelfie ? (side === 'left')  : (side === 'right');
+  return wantLeftIndices
+    ? { hi: 23, kn: 25, an: 27 }
+    : { hi: 24, kn: 26, an: 28 };
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   MODEL LOADING — use FULL model for higher accuracy (vs lite for shoulder)
+   The full model is ~3× heavier but gives noticeably better landmark
+   precision on leg keypoints, which matters at the goniometer-comparison level.
+   ═══════════════════════════════════════════════════════════════════ */
+async function loadModel() {
+  const vision = await FilesetResolver.forVisionTasks(
+    "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm"
+  );
+  return await PoseLandmarker.createFromOptions(vision, {
+    baseOptions: {
+      modelAssetPath: "https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_full/float16/1/pose_landmarker_full.task",
+      delegate: "GPU"
+    },
+    runningMode: "VIDEO",
+    numPoses: 1,
+    minPoseDetectionConfidence: 0.6,
+    minPosePresenceConfidence: 0.6,
+    minTrackingConfidence: 0.6
+  });
+}
+const modelPromise = loadModel();
+
+/* ═══════════════════════════════════════════════════════════════════
+   NAVIGATION
+   ═══════════════════════════════════════════════════════════════════ */
+function show(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+window.selectSide = (side) => {
+  operativeSide = side;
+  document.getElementById('btn-left').className  = 'side-btn' + (side==='left'  ? ' selected-left'  : '');
+  document.getElementById('btn-right').className = 'side-btn' + (side==='right' ? ' selected-right' : '');
+  updateStartBtn();
+};
+
+function updateStartBtn() {
+  const btn = document.getElementById('btn-start');
+  if (operativeSide) {
+    btn.disabled = false;
+    btn.textContent = `Continue with ${operativeSide.charAt(0).toUpperCase()+operativeSide.slice(1)} Knee →`;
+  } else {
+    btn.disabled = true;
+    btn.textContent = 'Select a knee to begin';
+  }
+}
+
+window.goWelcome = () => { stopLoop(); stopStream(); show('screen-welcome'); };
+
+window.goSetup = async () => {
+  if (!operativeSide) return;
+  document.getElementById('position-card').innerHTML = buildPositionCard();
+  document.getElementById('setup-title').textContent =
+    `Stand side-on — ${operativeSide} knee toward camera`;
+  show('screen-setup');
+  await startSetupCamera();
+};
+
+function buildPositionCard() {
+  const sideTxt = operativeSide.charAt(0).toUpperCase() + operativeSide.slice(1);
+  const steps = [
+    { icon:'🛏️', head:'Patient supine', body:'Patient <strong>lying on their back</strong> on a flat firm surface (bed or plinth). Body straight, hips level, feet uncrossed.' },
+    { icon:'↩️', head:`${sideTxt} knee toward camera`, body:`Camera must view the leg from a <strong>true lateral (side-on) angle</strong> — the ${sideTxt.toLowerCase()} knee should face the lens directly. Not oblique.` },
+    { icon:'📱', head:'Camera at knee height', body:'Hold the phone at <strong>knee height</strong>, about <strong>2–3 metres away</strong>, lens level with the joint. A tripod or assistant gives steadier readings than handheld.' },
+    { icon:'🦵', head:'Show full leg', body:'<strong>Hip, knee, and ankle</strong> must all be visible. Use shorts or roll trousers up — loose fabric reduces landmark accuracy.' },
+    { icon:'💡', head:'Lighting & contrast', body:'Even lighting; a <strong>contrasting background</strong> (plain wall or sheet behind the leg) improves landmark detection.' },
+    { icon:'📐', head:'Measurement protocol', body:'<strong>Extension:</strong> attempt to fully straighten leg, capture. <strong>Flexion:</strong> bring heel toward buttock (active or passive), capture at maximum.' },
+  ];
+  return `
+    <div class="position-card-title">📋 Setup for ${sideTxt} Knee — Supine</div>
+    <div class="position-steps">
+      ${steps.map(s => `
+        <div class="position-step">
+          <div class="position-step-icon">${s.icon}</div>
+          <div class="position-step-text"><strong>${s.head}</strong> — ${s.body}</div>
+        </div>`).join('')}
+    </div>`;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   CAMERA HANDLING
+   ═══════════════════════════════════════════════════════════════════ */
+function stopStream() {
+  if (stream) { stream.getTracks().forEach(t => t.stop()); stream = null; }
+}
+
+async function getCameraStream() {
+  stopStream();
+  // Try the requested facing mode; if unavailable, fall back.
+  const constraints = {
+    video: {
+      facingMode: cameraFacing,
+      width:  { ideal: 1280 },
+      height: { ideal: 720 }
+    },
+    audio: false
+  };
+  try {
+    stream = await navigator.mediaDevices.getUserMedia(constraints);
+  } catch (e) {
+    // fallback to any camera
+    stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+  }
+  // Reconcile cameraFacing with what we actually got. Some devices ignore
+  // the facingMode hint (e.g., desktops with a single webcam, or browsers
+  // that grant a different camera). We must trust the actual track settings,
+  // because getLmkIdx() decides left/right landmark mapping from cameraFacing.
+  const track = stream.getVideoTracks()[0];
+  const settings = track?.getSettings?.() || {};
+  if (settings.facingMode === 'user' || settings.facingMode === 'environment') {
+    cameraFacing = settings.facingMode;
+  } else if (!settings.facingMode) {
+    // Track reports no facingMode (common for desktop webcams). Assume
+    // selfie convention since desktop webcams are typically user-facing
+    // and naturally produce mirrored-looking preview to the user.
+    cameraFacing = 'user';
+  }
+  return stream;
+}
+
+window.switchCamera = async () => {
+  cameraFacing = cameraFacing === 'user' ? 'environment' : 'user';
+  // Restart whichever loop is active
+  const activeId = document.querySelector('.screen.active')?.id;
+  if (activeId === 'screen-setup') {
+    stopLoop();
+    await startSetupCamera();
+  } else if (activeId === 'screen-measure') {
+    stopLoop();
+    await startMeasureLoop();
+  }
+  applyMirrorClass();
+};
+
+function applyMirrorClass() {
+  // Selfie (user-facing) cameras are usually mirrored by the device; flip the
+  // displayed video so movements feel natural. Rear cameras are not mirrored.
+  const isSelfie = cameraFacing === 'user';
+  const setupWrap = document.getElementById('setup-video-wrap');
+  const measPanel = document.getElementById('camera-panel');
+  if (setupWrap) setupWrap.classList.toggle('mirror', isSelfie);
+  if (measPanel) measPanel.classList.toggle('mirror', isSelfie);
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   SETUP SCREEN — preview pose detection so user can frame correctly
+   ═══════════════════════════════════════════════════════════════════ */
+async function startSetupCamera() {
+  const video = document.getElementById('setup-video');
+  const canvas = document.getElementById('setup-canvas');
+  const dot = document.getElementById('setup-dot');
+  const statusEl = document.getElementById('setup-status');
+  const btn = document.getElementById('btn-begin');
+
+  const setDot = (cls, txt) => { dot.className='dot '+cls; statusEl.textContent=txt; };
+
+  setDot('detecting', 'Starting camera…');
+  try {
+    await getCameraStream();
+    video.srcObject = stream;
+    await video.play();
+    applyMirrorClass();
+    setDot('detecting', 'Loading AI model…');
+    poseLandmarker = await modelPromise;
+    setDot('detecting', 'Looking for your leg…');
+    lastTime = -1;
+
+    const idx = getLmkIdx(operativeSide);
+
+    function loop() {
+      if (!document.getElementById('screen-setup').classList.contains('active')) return;
+      if (video.currentTime !== lastTime && video.readyState >= 2) {
+        lastTime = video.currentTime;
+        let r;
+        try { r = poseLandmarker.detectForVideo(video, performance.now()); }
+        catch(e) { rafId = requestAnimationFrame(loop); return; }
+        drawSetupCanvas(canvas, video, r);
+        const lmks = r.landmarks?.[0];
+        if (lmks) {
+          const hi = lmks[idx.hi], kn = lmks[idx.kn], an = lmks[idx.an];
+          const minVis = Math.min(hi?.visibility ?? 0, kn?.visibility ?? 0, an?.visibility ?? 0);
+          if (minVis >= MIN_VISIBILITY) {
+            setDot('ready', '✓ Hip, knee & ankle detected');
+            btn.disabled = false;
+          } else if (minVis >= 0.3) {
+            setDot('detecting', 'Move so the full leg is visible');
+            btn.disabled = true;
+          } else {
+            setDot('detecting', 'Step back — show entire leg');
+            btn.disabled = true;
+          }
+        } else {
+          setDot('detecting', 'No pose detected — check lighting & distance');
+          btn.disabled = true;
+        }
+      }
+      rafId = requestAnimationFrame(loop);
+    }
+    rafId = requestAnimationFrame(loop);
+  } catch(e) {
+    setDot('error', 'Camera error: ' + e.message);
+    console.error(e);
+  }
+}
+
+function drawSetupCanvas(canvas, video, results) {
+  canvas.width = video.videoWidth || 640;
+  canvas.height = video.videoHeight || 480;
+  const ctx = canvas.getContext('2d');
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  if (results.landmarks?.[0]) {
+    const lmks = results.landmarks[0];
+    const du = new DrawingUtils(ctx);
+    du.drawConnectors(lmks, PoseLandmarker.POSE_CONNECTIONS, { color:'rgba(79,195,247,0.4)', lineWidth:2 });
+    // Highlight the operative leg
+    drawKneeOverlay(ctx, canvas.width, canvas.height, lmks);
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   MEASURE SCREEN
+   ═══════════════════════════════════════════════════════════════════ */
+window.goMeasure = async () => {
+  // Reset state
+  smoothedFlexion = null;
+  lastFlexion = null;
+  currentFlexion = null;
+  capturedExt = null;
+  capturedFlex = null;
+  updateCaptureUI();
+
+  document.getElementById('meas-side-badge').textContent = operativeSide.toUpperCase();
+  document.getElementById('meas-side-badge').className =
+    'meas-header-side ' + (operativeSide==='left' ? 'meas-side-left' : 'meas-side-right');
+
+  show('screen-measure');
+  await startMeasureLoop();
+};
+
+async function startMeasureLoop() {
+  const video = document.getElementById('meas-video');
+  const canvas = document.getElementById('meas-canvas');
+  const hint = document.getElementById('hint-banner');
+
+  if (!stream || !stream.active) {
+    await getCameraStream();
+    video.srcObject = stream;
+    await video.play();
+  } else {
+    video.srcObject = stream;
+    await video.play();
+  }
+  applyMirrorClass();
+
+  if (!poseLandmarker) poseLandmarker = await modelPromise;
+  lastTime = -1;
+
+  const idx = getLmkIdx(operativeSide);
+
+  function loop() {
+    if (!document.getElementById('screen-measure').classList.contains('active')) return;
+    if (video.currentTime !== lastTime && video.readyState >= 2) {
+      lastTime = video.currentTime;
+      let r;
+      try { r = poseLandmarker.detectForVideo(video, performance.now()); }
+      catch(e) { rafId = requestAnimationFrame(loop); return; }
+
+      drawMeasureCanvas(canvas, video, r);
+      const lmks = r.landmarks?.[0];
+
+      if (lmks) {
+        const hi = lmks[idx.hi], kn = lmks[idx.kn], an = lmks[idx.an];
+        const visHi = hi?.visibility ?? 0;
+        const visKn = kn?.visibility ?? 0;
+        const visAn = an?.visibility ?? 0;
+        const minVis = Math.min(visHi, visKn, visAn);
+
+        if (minVis >= MIN_VISIBILITY && hi && kn && an) {
+          // Calculate raw joint angle in image plane (sagittal view)
+          const rawFlexion = calcKneeFlexion(hi, kn, an);
+
+          // Outlier rejection
+          let accepted = true;
+          if (lastFlexion !== null && Math.abs(rawFlexion - lastFlexion) > MAX_FRAME_JUMP) {
+            accepted = false;
+          }
+
+          if (accepted) {
+            // EMA smoothing
+            if (smoothedFlexion === null) {
+              smoothedFlexion = rawFlexion;
+            } else {
+              smoothedFlexion = EMA_ALPHA * rawFlexion + (1 - EMA_ALPHA) * smoothedFlexion;
+            }
+            lastFlexion = smoothedFlexion;
+            currentFlexion = smoothedFlexion;
+          }
+
+          // Quality assessment
+          if (minVis >= 0.75) currentQuality = 'good';
+          else if (minVis >= 0.6) currentQuality = 'fair';
+          else currentQuality = 'poor';
+
+          updateAngleUI(currentFlexion);
+          updateQualityUI(minVis);
+          hint.textContent = currentQuality === 'good'
+            ? 'Tracking well — hold still at endpoints when capturing.'
+            : 'Tracking is acceptable. Move closer or improve lighting for best accuracy.';
+          hint.classList.remove('warn');
+        } else {
+          currentQuality = 'poor';
+          currentFlexion = null;
+          smoothedFlexion = null; // reset smoother when we lose tracking
+          updateAngleUI(null);
+          updateQualityUI(minVis);
+          hint.textContent = `⚠ Cannot see ${visHi<MIN_VISIBILITY?'hip ':''}${visKn<MIN_VISIBILITY?'knee ':''}${visAn<MIN_VISIBILITY?'ankle':''} clearly`;
+          hint.classList.add('warn');
+        }
+      } else {
+        currentFlexion = null;
+        smoothedFlexion = null;
+        currentQuality = 'poor';
+        updateAngleUI(null);
+        updateQualityUI(0);
+        hint.textContent = '⚠ No pose detected — check lighting and framing';
+        hint.classList.add('warn');
+      }
+    }
+    rafId = requestAnimationFrame(loop);
+  }
+  rafId = requestAnimationFrame(loop);
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   GONIOMETER-EQUIVALENT ANGLE CALCULATION — SUPINE PROTOCOL
+   ───────────────────────────────────────────────────────────────────
+   Method: 2D angle at the knee landmark, in the image (sagittal) plane.
+
+   Uses 2D image landmarks rather than 3D world landmarks because the
+   knee is a near-pure hinge — flexion-extension happens entirely in
+   the sagittal plane. With a true side-on view, that plane is parallel
+   to the image plane, so 2D measurement is geometrically valid AND
+   image landmarks are less noisy than world landmarks for in-plane
+   joint angles. Mirrors clinical goniometer placement:
+     hip   ≈ greater trochanter   (proximal arm)
+     knee  ≈ lateral epicondyle   (axis)
+     ankle ≈ lateral malleolus    (distal arm)
+
+   Position assumption: PATIENT SUPINE, facing up, on a flat surface.
+   The camera is side-on at knee level. The patient's anterior surface
+   faces the ceiling, so anatomic anterior = -y in the image
+   (MediaPipe y increases downward).
+
+   Convention (AAOS / ISOM):
+     0°  = full extension (hip-knee-ankle colinear on the bed surface)
+     +ve = flexion         (leg rises toward the ceiling)
+     -ve = hyperextension  (knee sags below bed level — angle opens
+                            anteriorly with a < 180° interior on the
+                            ceiling side)
+
+   Sign discrimination:
+     In supine the hip is anchored on the bed, so the hip's y is a
+     stable reference for the bed's surface plane. We compare the
+     vertical offsets of the knee and ankle from the hip and take
+     whichever has the largest magnitude as the deciding offset:
+       - offset upward (smaller y than hip)  → leg lifted → FLEXION
+       - offset downward (larger y than hip) → leg sagged → HYPEREXT
+     Using max-magnitude handles both heel-slide flexion (where the
+     knee stays on the bed and only the ankle lifts) and passive
+     flexion (where the knee lifts and the ankle moves with it).
+   ═══════════════════════════════════════════════════════════════════ */
+function calcKneeFlexion(hip, knee, ankle) {
+  // Vectors from the knee vertex outward to hip (thigh) and ankle (shank).
+  const v1x = hip.x   - knee.x;
+  const v1y = hip.y   - knee.y;
+  const v2x = ankle.x - knee.x;
+  const v2y = ankle.y - knee.y;
+
+  const dot  = v1x * v2x + v1y * v2y;
+  const mag1 = Math.sqrt(v1x*v1x + v1y*v1y);
+  const mag2 = Math.sqrt(v2x*v2x + v2y*v2y);
+  if (mag1 < 1e-6 || mag2 < 1e-6) return 0;
+
+  let cos = dot / (mag1 * mag2);
+  cos = Math.max(-1, Math.min(1, cos));
+  const jointAngle = Math.acos(cos) * 180 / Math.PI;  // 0°=folded, 180°=straight
+
+  // Magnitude of deviation from a fully-extended leg (always positive)
+  const deviation = 180 - jointAngle;
+
+  // Sign: which side of the hip-anchored bed plane is the leg displaced?
+  // Vertical offsets from hip (image y increases downward, so a negative
+  // offset = above hip = anatomically anterior = toward ceiling in supine).
+  const kneeOffset  = knee.y  - hip.y;
+  const ankleOffset = ankle.y - hip.y;
+
+  // Use the offset with the larger magnitude as the decider. Handles:
+  //   - heel-slide flexion: knee on bed (offset ≈ 0), ankle lifted (offset < 0)
+  //   - passive flexion:    knee lifted (offset < 0), ankle near bed
+  //   - hyperextension:     knee sags (offset > 0), ankle near bed
+  const decider = Math.abs(kneeOffset) >= Math.abs(ankleOffset)
+                ? kneeOffset
+                : ankleOffset;
+  // decider <= 0 → leg has lifted off bed (anterior)   → FLEXION (+ve)
+  // decider >  0 → leg has sagged below bed (posterior) → HYPEREXT (-ve)
+  const flexion = decider <= 0 ? deviation : -deviation;
+
+  // Sanity clamp to physiological knee range
+  if (flexion >  160) return  160;
+  if (flexion <  -30) return  -30;
+  return flexion;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   CANVAS DRAWING — landmark overlay so user can verify
+   ═══════════════════════════════════════════════════════════════════ */
+function drawMeasureCanvas(canvas, video, results) {
+  // Match canvas internal size to the video's intrinsic size so we draw at full resolution
+  const vw = video.videoWidth || 640;
+  const vh = video.videoHeight || 480;
+  if (canvas.width !== vw) canvas.width = vw;
+  if (canvas.height !== vh) canvas.height = vh;
+  const ctx = canvas.getContext('2d');
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  if (results.landmarks?.[0]) {
+    drawKneeOverlay(ctx, canvas.width, canvas.height, results.landmarks[0]);
+  }
+}
+
+function drawKneeOverlay(ctx, W, H, lmks) {
+  const idx = getLmkIdx(operativeSide);
+  const hi = lmks[idx.hi], kn = lmks[idx.kn], an = lmks[idx.an];
+  if (!hi || !kn || !an) return;
+
+  const visHi = hi.visibility ?? 0, visKn = kn.visibility ?? 0, visAn = an.visibility ?? 0;
+  const allVis = visHi >= MIN_VISIBILITY && visKn >= MIN_VISIBILITY && visAn >= MIN_VISIBILITY;
+
+  const hx = hi.x * W, hy = hi.y * H;
+  const kx = kn.x * W, ky = kn.y * H;
+  const ax = an.x * W, ay = an.y * H;
+
+  // Limb lines (femur and tibia)
+  ctx.lineWidth = Math.max(3, W * 0.005);
+  ctx.lineCap = 'round';
+  ctx.strokeStyle = allVis ? 'rgba(129,199,132,0.95)' : 'rgba(255,183,77,0.7)';
+  ctx.beginPath();
+  ctx.moveTo(hx, hy); ctx.lineTo(kx, ky); ctx.lineTo(ax, ay);
+  ctx.stroke();
+
+  // Landmark dots
+  const r = Math.max(7, W * 0.011);
+  const drawDot = (x, y, vis, label) => {
+    ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2);
+    ctx.fillStyle = vis >= MIN_VISIBILITY ? '#fff' : 'rgba(239,83,80,0.9)';
+    ctx.fill();
+    ctx.lineWidth = 2;
+    ctx.strokeStyle = vis >= MIN_VISIBILITY ? '#4fc3f7' : '#ef5350';
+    ctx.stroke();
+  };
+  drawDot(hx, hy, visHi);
+  drawDot(kx, ky, visKn);
+  drawDot(ax, ay, visAn);
+
+  // Angle arc at the knee
+  if (allVis) {
+    const a1 = Math.atan2(hy - ky, hx - kx);
+    const a2 = Math.atan2(ay - ky, ax - kx);
+    // Always draw the inner (acute) arc — the angle the goniometer measures
+    let start = a1, end = a2;
+    let diff = end - start;
+    while (diff > Math.PI)  diff -= 2 * Math.PI;
+    while (diff < -Math.PI) diff += 2 * Math.PI;
+    const arcRadius = Math.max(32, W * 0.045);
+    ctx.beginPath();
+    ctx.arc(kx, ky, arcRadius, start, start + diff, diff < 0);
+    ctx.strokeStyle = 'rgba(79,195,247,0.95)';
+    ctx.lineWidth = Math.max(2.5, W * 0.004);
+    ctx.stroke();
+  }
+
+  // Labels
+  ctx.fillStyle = 'rgba(255,255,255,0.92)';
+  ctx.font = `600 ${Math.max(11, W * 0.018)}px DM Sans, sans-serif`;
+  ctx.fillText('Hip',   hx + r + 6, hy + 4);
+  ctx.fillText('Knee',  kx + r + 6, ky + 4);
+  ctx.fillText('Ankle', ax + r + 6, ay + 4);
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   UI UPDATES
+   ═══════════════════════════════════════════════════════════════════ */
+function updateAngleUI(flex) {
+  const liveEl  = document.getElementById('live-angle');
+  const rawEl   = document.getElementById('raw-angle');
+  const labelEl = document.getElementById('angle-overlay-label');
+  if (flex === null || flex === undefined) {
+    liveEl.innerHTML = '--<span class="unit">°</span>';
+    liveEl.className = 'angle-overlay-value';
+    rawEl.textContent = 'Hold still to capture';
+    labelEl.textContent = 'Knee Angle';
+    return;
+  }
+  const rounded = Math.round(flex);
+  if (rounded < 0) {
+    // Hyperextension — display unsigned magnitude with explicit label
+    labelEl.textContent = 'Hyperextension';
+    liveEl.innerHTML = `${Math.abs(rounded)}<span class="unit">°</span>`;
+    liveEl.className = 'angle-overlay-value';
+    rawEl.textContent = `Below neutral (180° = ${Math.round(180 + flex)}° measured)`;
+  } else {
+    labelEl.textContent = 'Flexion';
+    liveEl.innerHTML = `${rounded}<span class="unit">°</span>`;
+    liveEl.className = 'angle-overlay-value' + (rounded >= 90 ? ' good' : '');
+    rawEl.textContent = rounded === 0
+      ? 'Full extension (180° measured)'
+      : `Joint angle: ${Math.round(180 - flex)}°`;
+  }
+}
+
+function updateQualityUI(minVis) {
+  const pill = document.getElementById('quality-pill');
+  const txt = document.getElementById('quality-text');
+  if (currentQuality === 'good') {
+    pill.className = 'quality-pill quality-good';
+    txt.textContent = `Good (${Math.round(minVis*100)}%)`;
+  } else if (currentQuality === 'fair') {
+    pill.className = 'quality-pill quality-fair';
+    txt.textContent = `Fair (${Math.round(minVis*100)}%)`;
+  } else {
+    pill.className = 'quality-pill quality-poor';
+    txt.textContent = `Low (${Math.round(minVis*100)}%)`;
+  }
+}
+
+function updateCaptureUI() {
+  const extCard = document.getElementById('cap-ext');
+  const extVal  = document.getElementById('cap-ext-val');
+  const extSub  = document.getElementById('cap-ext-sub');
+  if (capturedExt !== null) {
+    extCard.classList.add('captured');
+    if (capturedExt < 0) {
+      extVal.innerHTML = `−${Math.abs(Math.round(capturedExt))}<span class="unit">°</span>`;
+      extSub.textContent = 'Hyperextension';
+    } else if (capturedExt === 0 || Math.round(capturedExt) === 0) {
+      extVal.innerHTML = `0<span class="unit">°</span>`;
+      extSub.textContent = 'Full extension';
+    } else {
+      extVal.innerHTML = `${Math.round(capturedExt)}<span class="unit">°</span>`;
+      extSub.textContent = `${Math.round(capturedExt)}° extension lag`;
+    }
+  } else {
+    extCard.classList.remove('captured');
+    extVal.innerHTML = '—<span class="unit">°</span>';
+    extSub.textContent = 'Not captured';
+  }
+
+  const flexCard = document.getElementById('cap-flex');
+  const flexVal  = document.getElementById('cap-flex-val');
+  const flexSub  = document.getElementById('cap-flex-sub');
+  if (capturedFlex !== null) {
+    flexCard.classList.add('captured');
+    flexVal.innerHTML = `${Math.round(capturedFlex)}<span class="unit">°</span>`;
+    flexSub.textContent = capturedFlex >= 135 ? 'Normal range' :
+                          capturedFlex >= 110 ? 'Functional' :
+                          capturedFlex >= 90  ? 'Moderate' : 'Limited';
+  } else {
+    flexCard.classList.remove('captured');
+    flexVal.innerHTML = '—<span class="unit">°</span>';
+    flexSub.textContent = 'Not captured';
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   CAPTURE ACTIONS
+   ═══════════════════════════════════════════════════════════════════ */
+function flashScreen() {
+  const f = document.getElementById('flash');
+  f.classList.add('show');
+  setTimeout(() => f.classList.remove('show'), 80);
+}
+
+function showToast(text, sub) {
+  const t = document.getElementById('toast');
+  document.getElementById('toast-text').textContent = text;
+  document.getElementById('toast-sub').textContent = sub || '';
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 1400);
+}
+
+window.captureExt = () => {
+  if (currentFlexion === null) {
+    showToast('No reading', 'Tracking is not stable — adjust position');
+    return;
+  }
+  capturedExt = currentFlexion;
+  updateCaptureUI();
+  flashScreen();
+  if (capturedExt < 0) {
+    showToast(`Hyperextension: ${Math.abs(Math.round(capturedExt))}°`, 'Captured');
+  } else if (Math.round(capturedExt) === 0) {
+    showToast(`Extension: 0°`, 'Full extension reached');
+  } else {
+    showToast(`Extension: ${Math.round(capturedExt)}°`, `${Math.round(capturedExt)}° lag from straight`);
+  }
+};
+
+window.captureFlex = () => {
+  if (currentFlexion === null) {
+    showToast('No reading', 'Tracking is not stable — adjust position');
+    return;
+  }
+  capturedFlex = currentFlexion;
+  updateCaptureUI();
+  flashScreen();
+  showToast(`Flexion: ${Math.round(capturedFlex)}°`,
+    capturedFlex >= 135 ? 'Within normal range' : 'Recorded');
+};
+
+window.resetCaptures = () => {
+  capturedExt = null;
+  capturedFlex = null;
+  updateCaptureUI();
+  showToast('Reset', 'Captures cleared');
+};
+
+/* ═══════════════════════════════════════════════════════════════════
+   RESULTS
+   ═══════════════════════════════════════════════════════════════════ */
+window.finishSession = () => {
+  if (capturedExt === null && capturedFlex === null) {
+    showToast('Nothing to show', 'Capture at least one endpoint first');
+    return;
+  }
+  stopLoop();
+  show('screen-results');
+
+  document.getElementById('res-sub').textContent =
+    `${operativeSide.charAt(0).toUpperCase()+operativeSide.slice(1)} knee — measured ${new Date().toLocaleString('en-GB',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})}`;
+
+  // ROM calculation: arc = flexion endpoint − extension endpoint
+  // (where extension is normally 0° and flexion is positive; lag reduces arc)
+  let arc = null;
+  if (capturedExt !== null && capturedFlex !== null) {
+    arc = capturedFlex - capturedExt;
+  }
+
+  document.getElementById('res-arc').innerHTML = arc !== null
+    ? `${Math.round(arc)}<span class="unit">°</span>`
+    : `—<span class="unit">°</span>`;
+  document.getElementById('res-ext').textContent = capturedExt !== null
+    ? (Math.round(capturedExt) === 0 ? '0° (full)' :
+       capturedExt < 0                ? `−${Math.abs(Math.round(capturedExt))}° (hyperext.)` :
+                                        `${Math.round(capturedExt)}° (lag)`)
+    : '—';
+  document.getElementById('res-flex').textContent = capturedFlex !== null
+    ? `${Math.round(capturedFlex)}°`
+    : '—';
+};
+
+/* ═══════════════════════════════════════════════════════════════════
+   CLEANUP
+   ═══════════════════════════════════════════════════════════════════ */
+function stopLoop() {
+  if (rafId) { cancelAnimationFrame(rafId); rafId = null; }
+}
+
+window.addEventListener('beforeunload', () => { stopLoop(); stopStream(); });
+
+</script>
+</body>
+</html>
